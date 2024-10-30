@@ -8,6 +8,8 @@ on:
       - 'setup.py'
       - 'requirements.txt'
       - 'cli/**'
+  
+  workflow_dispatch:
 
 jobs:
   publish:
