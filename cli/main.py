@@ -264,13 +264,19 @@ def main():
         elif args.verify:
             email, code = args.verify
             api_client.verify_user(email, code)
-
+        
         elif args.history:
-            history = api_client.get_history()
-            if history:
-                print("Query History:")
-                for entry in history.get("entries", []):
-                    print(f"Query: {entry['query']}\nResponse: {entry['response']}\n")
+            history_response = api_client.get_history()
+            if history_response and history_response.get("statusCode") == 200:
+                try:
+                    history_entries = json.loads(history_response.get("body", "[]"))
+                    print("Query History:")
+                    for entry in history_entries:
+                        print(f"Query: {entry['query']}\nUser ID: {entry['user_id']}\nTimestamp: {entry['timestamp']}\n")
+                except json.JSONDecodeError:
+                    logger.error("Failed to decode the history response.")
+            else:
+                print("No history available or an error occurred.")
 
         elif args.query_text:
             result = api_client.get_command_response(args.query_text)
