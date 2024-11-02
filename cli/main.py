@@ -73,16 +73,44 @@ class KubeWhisperAPI:
         return None
 
     def _save_user_data(self, username: str):
-        """Save username to credentials file."""
+        """Save or update the username in the credentials file without overwriting other fields."""
+        data = {}
+        
+        # Load existing data if the file exists
+        if os.path.exists(CREDENTIALS_PATH):
+            with open(CREDENTIALS_PATH, "r") as file:
+                try:
+                    data = json.load(file)
+                except json.JSONDecodeError:
+                    logger.error("Failed to decode JSON; reinitializing credentials file.")
+
+        # Update or add the username
+        data["username"] = username
         os.makedirs(os.path.dirname(CREDENTIALS_PATH), exist_ok=True)
+
+        # Write updated data back to the file
         with open(CREDENTIALS_PATH, "w") as file:
-            json.dump({"username": username}, file)
+            json.dump(data, file)
 
     def _save_token(self, token: str):
-        """Save id token to credentials file."""
+        """Save or update the id token in the credentials file without overwriting other fields."""
+        data = {}
+        
+        # Load existing data if the file exists
+        if os.path.exists(CREDENTIALS_PATH):
+            with open(CREDENTIALS_PATH, "r") as file:
+                try:
+                    data = json.load(file)
+                except json.JSONDecodeError:
+                    logger.error("Failed to decode JSON; reinitializing credentials file.")
+
+        # Update or add the id token
+        data["id_token"] = token
         os.makedirs(os.path.dirname(CREDENTIALS_PATH), exist_ok=True)
+
+        # Write updated data back to the file
         with open(CREDENTIALS_PATH, "w") as file:
-            json.dump({"id_token": token}, file)
+            json.dump(data, file)
 
     def _get_token(self) -> str:
         """Ensure the token is loaded and available."""
@@ -141,6 +169,7 @@ class KubeWhisperAPI:
             token = body.get("IdToken")
             if token:
                 self._save_token(token)
+                self._save_user_data(email)
                 self.token = token
                 logger.info("Authentication successful; token saved.")
             return token
@@ -158,6 +187,7 @@ class KubeWhisperAPI:
             token = body.get("IdToken")
             if token:
                 self._save_token(token)
+                self._save_user_data(email)
                 self.token = token
                 logger.info("Verification successful; token saved.")
             return token
@@ -166,7 +196,8 @@ class KubeWhisperAPI:
 
     def get_command_response(self, query: str) -> Optional[str]:
         """Send a query to the API and return the extracted command."""
-        payload = {"query": query}
+        email = self._get_username()
+        payload = {"query": query, "user_id": email}
         response_json = self.post_request("query", payload)
         response_body = response_json.get("body")
 
@@ -184,6 +215,7 @@ class KubeWhisperAPI:
     def get_history(self) -> Optional[Dict]:
         """Retrieve the user's query history."""
         return self.post_request("get_history", {})
+
 
 
 def parse_arguments():
