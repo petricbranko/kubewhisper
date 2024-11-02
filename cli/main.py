@@ -214,7 +214,9 @@ class KubeWhisperAPI:
 
     def get_history(self) -> Optional[Dict]:
         """Retrieve the user's query history."""
-        return self.post_request("history", {})
+        email = self._get_username()
+        payload = {"user_id": email}
+        return self.post_request("history", payload)
 
 
 
